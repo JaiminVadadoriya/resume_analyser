@@ -62,10 +62,12 @@ export class AnalyzerService {
       await tf.ready();
       this.loadingProgress.set(30);
 
-      // Load Universal Sentence Encoder locally to avoid CORS errors
+      // Load USE model locally (binary shards) + vocab from Google Storage
+      // The vocab.json (218 KB) is fetched from GCS which has permissive CORS headers,
+      // avoiding the Vite dev-server fs.allow restriction on .json files.
       this.model = await use.load({
         modelUrl: '/models/use-lite/model.json',
-        vocabUrl: '/models/use-lite/vocab.json'
+        vocabUrl: 'https://storage.googleapis.com/tfjs-models/savedmodel/universal_sentence_encoder/vocab.json'
       });
       
       this.loadingProgress.set(100);
