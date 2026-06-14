@@ -42,3 +42,8 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+test/
+
+# TF.js model binary weight shards (downloaded by CI — too large for git)
+# model.json and vocab.json are committed; binary shards are regenerated.
+/public/models/use-lite/group1-shard*
