@@ -18,7 +18,7 @@ vi.mock('@tensorflow-models/universal-sentence-encoder', () => {
             new Array(512).fill(0).map((_, i) => (i === 0 ? 1.0 : 0.0)),
             new Array(512).fill(0).map((_, i) => (i === 0 ? 0.9 : 0.0)) // High cosine similarity (~0.9)
           ]),
-          dispose: () => {}
+          dispose: () => { /* mock: no-op tensor disposal */ }
         };
       }
     })

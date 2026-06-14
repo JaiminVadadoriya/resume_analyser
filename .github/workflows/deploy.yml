@@ -31,10 +31,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      # Angular 22 requires Node.js >= 22.22.3
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.22.3'
           cache: 'npm'
 
       - name: Install dependencies
@@ -59,25 +60,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '22.22.3'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Download local TF model assets (if not tracked in git)
+      - name: Download TF model assets (if not tracked in git)
         run: |
           MODEL_DIR="public/models/use-lite"
           if [ ! -f "$MODEL_DIR/model.json" ]; then
-            echo "Model files not found in repo — downloading from TFHub..."
+            echo "Downloading USE Lite model from TFHub..."
             mkdir -p "$MODEL_DIR"
-            # Download model.json
             curl -fSL "https://tfhub.dev/tensorflow/tfjs-model/universal-sentence-encoder-lite/1/default/1/model.json?tfjs-format=file" \
               -o "$MODEL_DIR/model.json"
-            # Parse shard paths from model.json and download each
             node -e "
               const fs = require('fs');
               const model = JSON.parse(fs.readFileSync('$MODEL_DIR/model.json', 'utf8'));
@@ -88,12 +87,11 @@ jobs:
                 -o "$MODEL_DIR/${shard}"
               echo "Downloaded: ${shard}"
             done
-            # Download vocabulary
             curl -fSL "https://storage.googleapis.com/tfjs-models/savedmodel/universal_sentence_encoder/vocab.json" \
               -o "$MODEL_DIR/vocab.json"
             echo "All model assets ready."
           else
-            echo "Model files already present in repo."
+            echo "Model files already present."
           fi
 
       - name: Build Angular (production, base-href for GitHub Pages)
