@@ -41,8 +41,8 @@ describe('ResumeParserService', () => {
     if (typeof mockFile.arrayBuffer !== 'function') {
       mockFile.arrayBuffer = async () => {
         // Construct the ArrayBuffer using the JSDOM realm constructors to pass prototype checks
-        const RealmArrayBuffer = (globalThis as any).ArrayBuffer || ArrayBuffer;
-        const RealmUint8Array = (globalThis as any).Uint8Array || Uint8Array;
+        const RealmArrayBuffer = (globalThis as unknown as { ArrayBuffer: typeof ArrayBuffer }).ArrayBuffer || ArrayBuffer;
+        const RealmUint8Array = (globalThis as unknown as { Uint8Array: typeof Uint8Array }).Uint8Array || Uint8Array;
         
         const buf = new RealmArrayBuffer(pdfBuffer.length);
         const view = new RealmUint8Array(buf);

@@ -1,7 +1,5 @@
 // @vitest-environment jsdom
 import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
 
 // Redirect all pdfjs-dist imports to the node-safe legacy build during Vitest runs
 vi.mock('pdfjs-dist', () => {
@@ -10,13 +8,17 @@ vi.mock('pdfjs-dist', () => {
 
 // Mock @angular/core to dynamically patch Component decorator and inline assets
 vi.mock('@angular/core', async (importOriginal) => {
-  const original = await importOriginal<any>();
+  interface ComponentMeta { templateUrl?: string; template?: string; styleUrl?: string; styles?: string[] }
+  interface NgCoreModule extends Record<string, unknown> {
+    Component: (metadata: ComponentMeta) => ClassDecorator;
+  }
+  const original = await importOriginal<NgCoreModule>();
   const fs = await import('fs');
   const path = await import('path');
   
   return {
     ...original,
-    Component: (metadata: any) => {
+    Component: (metadata: { templateUrl?: string; template?: string; styleUrl?: string; styles?: string[] }) => {
       if (metadata) {
         if (metadata.templateUrl) {
           try {
@@ -57,8 +59,8 @@ try {
     BrowserDynamicTestingModule,
     platformBrowserDynamicTesting()
   );
-} catch (e) {
-  // Suppress errors
+} catch {
+  // Suppress duplicate-init errors when test files are re-evaluated
 }
 
 // Mocks for services to prevent TensorFlow.js model load and PDF worker loading in test context

@@ -1,7 +1,20 @@
 // @vitest-environment jsdom
-import { describe, beforeEach, afterEach, it, expect } from 'vitest';
+import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 import { HistoryService } from './history.service';
 import { AnalysisResult } from './analyzer.service';
+
+// In-memory localStorage mock — needed because the per-file jsdom instance
+// does not inherit the url from vitest.config.ts environmentOptions,
+// leaving the origin as about:blank (opaque) where localStorage is blocked.
+const makeLocalStorageMock = () => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = String(value); },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+};
 
 describe('HistoryService', () => {
   let service: HistoryService;
@@ -16,12 +29,12 @@ describe('HistoryService', () => {
   };
 
   beforeEach(() => {
-    localStorage.clear();
+    vi.stubGlobal('localStorage', makeLocalStorageMock());
     service = new HistoryService();
   });
 
   afterEach(() => {
-    localStorage.clear();
+    vi.unstubAllGlobals();
   });
 
   it('should be created and have empty initial history', () => {
