@@ -72,7 +72,7 @@ jobs:
       - name: Download TF model assets (if not tracked in git)
         run: |
           MODEL_DIR="public/models/use-lite"
-          if [ ! -f "$MODEL_DIR/model.json" ]; then
+          if [ ! -f "$MODEL_DIR/group1-shard1of7" ]; then
             echo "Downloading USE Lite model from TFHub..."
             mkdir -p "$MODEL_DIR"
             curl -fSL "https://tfhub.dev/tensorflow/tfjs-model/universal-sentence-encoder-lite/1/default/1/model.json?tfjs-format=file" \
