@@ -56,8 +56,28 @@ export class App {
   protected readonly contactInfo = signal<ContactInfo | null>(null);
   protected readonly latexCode = signal<string>('');
   protected readonly selectedTemplate = signal<string>('technical');
+  protected readonly currentTheme = signal<string>('dark');
 
   private resumeText = '';
+
+  constructor() {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const savedTheme = localStorage.getItem('resume_analyser_theme') || 'dark';
+      this.setTheme(savedTheme);
+    }
+  }
+
+  protected setTheme(theme: string): void {
+    this.currentTheme.set(theme);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('resume_analyser_theme', theme);
+    }
+    if (typeof document !== 'undefined') {
+      const body = document.body;
+      body.classList.remove('theme-dark', 'theme-light', 'theme-warm');
+      body.classList.add(`theme-${theme}`);
+    }
+  }
 
   /**
    * Triggers TF.js model loading manually

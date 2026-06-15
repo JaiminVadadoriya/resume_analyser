@@ -6,34 +6,49 @@
       <h1>RESUME<span>.ANALYSER</span></h1>
     </div>
     
-    <!-- TF.js Model Status Badge -->
-    <div class="model-status-container">
-      @switch (tfStatus()) {
-        @case ('loading') {
-          <div class="status-badge loading">
-            <mat-spinner diameter="16"></mat-spinner>
-            <span>Loading AI Engine ({{ tfProgress() }}%)</span>
-          </div>
+    <div class="header-right">
+      <!-- Theme Switcher Controls -->
+      <div class="theme-switcher">
+        <button mat-icon-button id="theme-btn-light" class="theme-btn" [class.active]="currentTheme() === 'light'" (click)="setTheme('light')" matTooltip="Light Mode">
+          <mat-icon>light_mode</mat-icon>
+        </button>
+        <button mat-icon-button id="theme-btn-dark" class="theme-btn" [class.active]="currentTheme() === 'dark'" (click)="setTheme('dark')" matTooltip="Dark Mode">
+          <mat-icon>dark_mode</mat-icon>
+        </button>
+        <button mat-icon-button id="theme-btn-warm" class="theme-btn" [class.active]="currentTheme() === 'warm'" (click)="setTheme('warm')" matTooltip="Warm Mode">
+          <mat-icon>wb_sunny</mat-icon>
+        </button>
+      </div>
+
+      <!-- TF.js Model Status Badge -->
+      <div class="model-status-container">
+        @switch (tfStatus()) {
+          @case ('loading') {
+            <div class="status-badge loading">
+              <mat-spinner diameter="16"></mat-spinner>
+              <span>Loading AI Engine ({{ tfProgress() }}%)</span>
+            </div>
+          }
+          @case ('loaded') {
+            <div class="status-badge loaded" matTooltip="TensorFlow.js and Sentence Encoder model are loaded successfully.">
+              <span class="dot pulse-green"></span>
+              <span>AI Matcher Ready</span>
+            </div>
+          }
+          @case ('error') {
+            <div class="status-badge error" (click)="triggerLoadModel()" (keydown.enter)="triggerLoadModel()" (keydown.space)="triggerLoadModel()" tabindex="0" role="button" matTooltip="Click to retry loading the model.">
+              <span class="dot dot-red"></span>
+              <span>AI Load Failed (Retry)</span>
+            </div>
+          }
+          @default {
+            <div class="status-badge idle" (click)="triggerLoadModel()" (keydown.enter)="triggerLoadModel()" (keydown.space)="triggerLoadModel()" tabindex="0" role="button">
+              <span class="dot dot-gray"></span>
+              <span>Engine Offline</span>
+            </div>
+          }
         }
-        @case ('loaded') {
-          <div class="status-badge loaded" matTooltip="TensorFlow.js and Sentence Encoder model are loaded successfully.">
-            <span class="dot pulse-green"></span>
-            <span>AI Matcher Ready</span>
-          </div>
-        }
-        @case ('error') {
-          <div class="status-badge error" (click)="triggerLoadModel()" (keydown.enter)="triggerLoadModel()" (keydown.space)="triggerLoadModel()" tabindex="0" role="button" matTooltip="Click to retry loading the model.">
-            <span class="dot dot-red"></span>
-            <span>AI Load Failed (Retry)</span>
-          </div>
-        }
-        @default {
-          <div class="status-badge idle" (click)="triggerLoadModel()" (keydown.enter)="triggerLoadModel()" (keydown.space)="triggerLoadModel()" tabindex="0" role="button">
-            <span class="dot dot-gray"></span>
-            <span>Engine Offline</span>
-          </div>
-        }
-      }
+      </div>
     </div>
   </header>
 
@@ -73,6 +88,7 @@
             <p class="section-subtitle">Provide your resume to extract candidate details.</p>
 
             <div class="dropzone" 
+                 id="resume-dropzone"
                  [class.active]="isParsing()"
                  (dragover)="onDragOver($event)" 
                  (drop)="onFileDropped($event)"
@@ -83,7 +99,7 @@
                  role="button"
                  aria-label="Upload Resume PDF">
               
-              <input type="file" #fileInput (change)="onFileSelected($event)" accept="application/pdf" style="display: none;">
+              <input type="file" id="resume-file-input" #fileInput (change)="onFileSelected($event)" accept="application/pdf" style="display: none;">
               
               @if (isParsing()) {
                 <div class="loader-container">
@@ -97,7 +113,7 @@
                     <span class="file-name">{{ resumeName() }}</span>
                     <span class="file-type">PDF Resume</span>
                   </div>
-                  <button mat-icon-button color="warn" (click)="$event.stopPropagation(); resumeName.set(''); errorMsg.set('')" matTooltip="Remove File">
+                  <button mat-icon-button id="remove-file-btn" color="warn" (click)="$event.stopPropagation(); resumeName.set(''); errorMsg.set('')" matTooltip="Remove File">
                     <mat-icon>delete</mat-icon>
                   </button>
                 </div>
@@ -131,6 +147,7 @@
 
             <div class="input-container">
               <textarea 
+                id="jd-input"
                 [ngModel]="jdText()" 
                 (ngModelChange)="jdText.set($event)"
                 placeholder="Paste the Job Description keywords, responsibilities, or requirements here..." 
@@ -145,6 +162,7 @@
         <div class="action-footer no-print">
           <button 
             mat-flat-button 
+            id="analyze-btn"
             class="glow-button btn-large" 
             [disabled]="!resumeName() || !jdText().trim() || isAnalyzing() || tfStatus() === 'loading'"
             (click)="runAnalysis()">
@@ -331,13 +349,13 @@
               <h3 class="card-subtitle"><mat-icon class="text-cyan">ios_share</mat-icon> Export & Share Report</h3>
               <p class="card-meta">Save your results, download raw data details, or print a formatted document.</p>
               <div class="export-button-group">
-                <button mat-stroked-button (click)="downloadJsonReport()">
+                <button mat-stroked-button id="export-json-btn" (click)="downloadJsonReport()">
                   <mat-icon>download</mat-icon> Export JSON
                 </button>
-                <button mat-stroked-button (click)="copyReportSummary()">
+                <button mat-stroked-button id="copy-summary-btn" (click)="copyReportSummary()">
                   <mat-icon>content_copy</mat-icon> Copy Summary
                 </button>
-                <button mat-flat-button color="accent" class="glow-button" (click)="printReport()">
+                <button mat-flat-button id="print-pdf-btn" color="accent" class="glow-button" (click)="printReport()">
                   <mat-icon>print</mat-icon> Print / Save PDF
                 </button>
               </div>
@@ -363,16 +381,16 @@
                   </div>
                 </div>
                 <div class="latex-actions">
-                  <button mat-flat-button class="latex-btn" (click)="copyLatexToClipboard()">
+                  <button mat-flat-button id="copy-latex-btn" class="latex-btn" (click)="copyLatexToClipboard()">
                     <mat-icon>content_copy</mat-icon> Copy Code
                   </button>
-                  <button mat-flat-button color="primary" class="latex-btn" (click)="downloadLatexFile()">
+                  <button mat-flat-button id="download-latex-btn" color="primary" class="latex-btn" (click)="downloadLatexFile()">
                     <mat-icon>download</mat-icon> Download .tex
                   </button>
                 </div>
               </div>
               <div class="latex-editor-container">
-                <textarea readonly class="latex-textarea" [value]="latexCode()" aria-label="Generated LaTeX Resume Code"></textarea>
+                <textarea readonly id="latex-editor" class="latex-textarea" [value]="latexCode()" aria-label="Generated LaTeX Resume Code"></textarea>
               </div>
             </div>
 
