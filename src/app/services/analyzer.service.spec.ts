@@ -8,7 +8,8 @@ vi.mock('@tensorflow/tfjs', () => {
   };
 });
 
-// Mock Universal Sentence Encoder model
+// Mock Universal Sentence Encoder model — never actually fetches model files,
+// so document.baseURI being 'about:blank' in jsdom is harmless.
 vi.mock('@tensorflow-models/universal-sentence-encoder', () => {
   return {
     load: () => Promise.resolve({
