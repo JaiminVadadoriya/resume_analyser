@@ -41,9 +41,9 @@ describe('AnalyzerService', () => {
     expect(service.modelStatus()).toBe('loaded');
   });
 
-  it('should analyze text and compute semantic, ATS, and explainability metrics', async () => {
-    const resumeText = 'Jaimin Vadadoriya is a Frontend Engineer specializing in Angular and TypeScript. Email: test@example.com Phone: 1234567890';
-    const jdText = 'Looking for an Angular developer with experience in TypeScript and React.';
+  it('should analyze text and compute semantic, ATS, explainability, and weak signal metrics', async () => {
+    const resumeText = 'Jaimin Vadadoriya is a Software Engineer specializing in software development. Email: test@example.com Phone: 1234567890';
+    const jdText = 'Looking for an engineer to lead projects, manage team milestones, and write code.';
 
     const result = await service.analyze(resumeText, jdText);
 
@@ -54,23 +54,26 @@ describe('AnalyzerService', () => {
     // ATS compatibility metrics
     expect(result.atsScore).toBeGreaterThanOrEqual(0);
     expect(result.atsScore).toBeLessThanOrEqual(100);
-    expect(result.keywordMatchRate).toBe(67); // Angular & TS matched, React missing (2/3 = 66.67%)
-    expect(result.keywordDensity).toBeGreaterThan(0);
+    expect(result.keywordMatchRate).toBe(17); // Software Development matched, others missing
+    expect(result.keywordDensity).toBeDefined(); // Impact Score
 
-    // Skill extraction (aliases mapped)
-    expect(result.matchedSkills).toContain('Angular');
-    expect(result.matchedSkills).toContain('TypeScript');
-    expect(result.missingSkills).toContain('React');
+    // Competency extraction (universal taxonomy)
+    expect(result.matchedSkills).toContain('Software Development');
+    expect(result.missingSkills).toContain('Leadership & Team Management');
 
     // Explainability breakdown
     expect(result.breakdown).toBeDefined();
     expect(result.breakdown.length).toBeGreaterThan(0);
     
     const factors = result.breakdown.map(b => b.factor);
-    expect(factors).toContain('Semantic Alignment');
-    expect(factors).toContain('Skill Keyword Coverage');
-    expect(factors).toContain('Keyword Density');
-    expect(factors).toContain('ATS Formatting & Info');
+    expect(factors).toContain('Competency Alignment');
+    expect(factors).toContain('Experience Relevance');
+    expect(factors).toContain('Impact & Outcomes');
+    expect(factors).toContain('Resume Quality & Structure');
+
+    // Weak signals should be detected (due to lack of metrics/outcome numbers)
+    expect(result.weakSignals.length).toBeGreaterThan(0);
+    expect(result.weakSignals[0]).toContain('quantified outcomes');
 
     // Recommendations list should be populated
     expect(result.recommendations.length).toBeGreaterThan(0);

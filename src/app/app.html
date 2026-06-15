@@ -190,7 +190,7 @@
                   <div class="score-ring" [style.--score-deg]="(currentResult()?.atsScore || 0) * 3.6 + 'deg'">
                     <div class="score-ring-inner">
                       <span class="score-number">{{ currentResult()?.atsScore }}%</span>
-                      <span class="score-label">ATS COMPATIBILITY</span>
+                      <span class="score-label">RESUME FIT SCORE</span>
                     </div>
                   </div>
                 </div>
@@ -198,21 +198,21 @@
                 <!-- Sub Score Metrics Grid -->
                 <div class="score-details-grid">
                   <div class="sub-score-card">
-                    <span class="sub-score-title">Semantic Context Match</span>
+                    <span class="sub-score-title">Context Relevance</span>
                     <span class="sub-score-value text-cyan">{{ currentResult()?.matchScore }}%</span>
                     <div class="sub-score-bar"><div class="sub-score-fill bg-cyan" [style.width]="currentResult()?.matchScore + '%'"></div></div>
                   </div>
 
                   <div class="sub-score-card">
-                    <span class="sub-score-title">Required Skill Coverage</span>
+                    <span class="sub-score-title">Competency Match</span>
                     <span class="sub-score-value text-emerald">{{ currentResult()?.keywordMatchRate }}%</span>
                     <div class="sub-score-bar"><div class="sub-score-fill bg-emerald" [style.width]="currentResult()?.keywordMatchRate + '%'"></div></div>
                   </div>
 
                   <div class="sub-score-card">
-                    <span class="sub-score-title">Keyword Density</span>
-                    <span class="sub-score-value text-purple">{{ currentResult()?.keywordDensity | number:'1.1-1' }}%</span>
-                    <div class="sub-score-bar"><div class="sub-score-fill bg-purple" [style.width]="(currentResult()?.keywordDensity || 0) * 25 + '%'"></div></div>
+                    <span class="sub-score-title">Impact / Metrics</span>
+                    <span class="sub-score-value text-purple">{{ currentResult()?.keywordDensity }}%</span>
+                    <div class="sub-score-bar"><div class="sub-score-fill bg-purple" [style.width]="currentResult()?.keywordDensity + '%'"></div></div>
                   </div>
                 </div>
 
@@ -226,7 +226,7 @@
                   } @else if ((currentResult()?.atsScore || 0) >= 60) {
                     Your resume is a <strong class="text-emerald">Strong Match ({{ currentResult()?.atsScore }}%)</strong> with moderate improvements needed.
                   } @else if ((currentResult()?.atsScore || 0) >= 40) {
-                    Your resume has <strong class="text-purple">Moderate Alignment ({{ currentResult()?.atsScore }}%)</strong>. Adding critical keywords is recommended.
+                    Your resume has <strong class="text-purple">Moderate Alignment ({{ currentResult()?.atsScore }}%)</strong>. Adding critical outcomes is recommended.
                   } @else {
                     Your resume has <strong class="text-red">Low ATS Compatibility ({{ currentResult()?.atsScore }}%)</strong>. Tailoring is highly suggested.
                   }
@@ -237,7 +237,7 @@
             <!-- Score Explainability Breakdown -->
             <div class="glass-card breakdown-card">
               <h3 class="card-subtitle"><mat-icon class="text-cyan">bar_chart</mat-icon> Compatibility Score Breakdown</h3>
-              <p class="card-meta">Here is how the factors contributed to your overall ATS Score:</p>
+              <p class="card-meta">Here is how the factors contributed to your overall Fit Score:</p>
               
               <div class="breakdown-list">
                 @for (item of currentResult()?.breakdown; track item.factor) {
@@ -265,8 +265,8 @@
               
               <!-- Matched Skills -->
               <div class="glass-card skills-card matched-skills-card">
-                <h3 class="card-subtitle"><mat-icon class="text-emerald">check_circle</mat-icon> Matched Skills</h3>
-                <p class="card-meta">These key requirements are present in your resume.</p>
+                <h3 class="card-subtitle"><mat-icon class="text-emerald">check_circle</mat-icon> Matched Competencies</h3>
+                <p class="card-meta">These core roles or behaviors were detected in your resume.</p>
                 
                 <div class="skills-grid">
                   @if (currentResult()?.matchedSkills?.length) {
@@ -274,15 +274,15 @@
                       <span class="skill-tag match-tag">{{ skill }}</span>
                     }
                   } @else {
-                    <p class="empty-list-text">No technical skills detected matching the requirements.</p>
+                    <p class="empty-list-text">No matching competencies detected between the resume and job description.</p>
                   }
                 </div>
               </div>
 
               <!-- Missing Skills -->
               <div class="glass-card skills-card missing-skills-card">
-                <h3 class="card-subtitle"><mat-icon class="text-purple">warning</mat-icon> Skill Gaps Detected</h3>
-                <p class="card-meta">Incorporate these tools or terms to boost relevance.</p>
+                <h3 class="card-subtitle"><mat-icon class="text-purple">warning</mat-icon> Competency Gaps</h3>
+                <p class="card-meta">Incorporate evidence of these capabilities to improve alignment.</p>
                 
                 <div class="skills-grid">
                   @if (currentResult()?.missingSkills?.length) {
@@ -290,12 +290,28 @@
                       <span class="skill-tag gap-tag">{{ skill }}</span>
                     }
                   } @else {
-                    <p class="empty-list-text text-emerald">Perfect! No missing technical requirements identified.</p>
+                    <p class="empty-list-text text-emerald">Perfect! No missing competency gaps identified.</p>
                   }
                 </div>
               </div>
 
             </div>
+
+            <!-- Weak Signals Widget -->
+            @if (currentResult()?.weakSignals?.length) {
+              <div class="glass-card weak-signals-card">
+                <h3 class="card-subtitle"><mat-icon class="text-red">report_problem</mat-icon> Behavior & Signal Gaps</h3>
+                <p class="card-meta">Implicit issues detected that may reduce recruiter response rates.</p>
+                <ul class="signal-list">
+                  @for (signal of currentResult()?.weakSignals; track signal) {
+                    <li>
+                      <mat-icon class="li-icon text-red">warning</mat-icon>
+                      <span>{{ signal }}</span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
 
             <!-- AI recommendations list -->
             <div class="glass-card recommendations-card">
@@ -332,7 +348,19 @@
               <div class="card-header-with-actions">
                 <div>
                   <h3 class="card-subtitle"><mat-icon class="text-cyan">code</mat-icon> Tailored LaTeX Resume Template</h3>
-                  <p class="card-meta">This is a highly ATS-optimized LaTeX resume structure. It pre-populates your contact details, adds matched skills, and flags missing gaps in LaTeX comments to help you update your resume.</p>
+                  <p class="card-meta">Select a professional resume style. The template dynamically formats your contact details and categorized competencies.</p>
+                  
+                  <div class="template-selector-container">
+                    <label for="templateSelect" class="template-label">Select Style:</label>
+                    <select id="templateSelect" class="template-select" [ngModel]="selectedTemplate()" (change)="onTemplateChanged($event)">
+                      <option value="technical">Technical / Engineering</option>
+                      <option value="business">Business / Management</option>
+                      <option value="academic">Academic / CV</option>
+                      <option value="fresher">Fresher / Entry-Level</option>
+                      <option value="executive">Executive Leadership</option>
+                      <option value="creative">Creative / Design</option>
+                    </select>
+                  </div>
                 </div>
                 <div class="latex-actions">
                   <button mat-flat-button class="latex-btn" (click)="copyLatexToClipboard()">
