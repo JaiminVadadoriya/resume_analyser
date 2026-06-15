@@ -78,4 +78,20 @@ describe('AnalyzerService', () => {
     // Recommendations list should be populated
     expect(result.recommendations.length).toBeGreaterThan(0);
   });
+
+  it('should utilize the embedding cache for identical text inputs', async () => {
+    const text1 = 'This is a test resume content for caching.';
+    const text2 = 'This is a test job description for caching.';
+
+    const cache = (service as unknown as { embeddingCache: Map<string, number[]> }).embeddingCache;
+    cache.clear();
+
+    // First analysis: populates cache
+    await service.analyze(text1, text2);
+    expect(cache.size).toBe(2);
+
+    // Second analysis: reuses cache (verify size does not increase)
+    await service.analyze(text1, text2);
+    expect(cache.size).toBe(2);
+  });
 });

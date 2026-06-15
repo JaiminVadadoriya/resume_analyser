@@ -22,9 +22,16 @@ describe('HistoryService', () => {
 
   const mockResult: AnalysisResult = {
     matchScore: 85,
+    atsScore: 82,
+    keywordMatchRate: 90,
+    keywordDensity: 3.5,
     matchedSkills: ['Angular', 'TypeScript'],
     missingSkills: ['React'],
     recommendations: ['Nice match'],
+    breakdown: [
+      { factor: 'Competency Alignment', contribution: 36, description: 'Desc' }
+    ],
+    weakSignals: ['None'],
     analyzedAt: new Date().toLocaleString()
   };
 
