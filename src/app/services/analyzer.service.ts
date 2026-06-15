@@ -15,7 +15,7 @@ export interface AnalysisResult {
 })
 export class AnalyzerService {
   private model: use.UniversalSentenceEncoder | null = null;
-  
+
   // Reactively track loading state
   modelStatus = signal<'idle' | 'loading' | 'loaded' | 'error'>('idle');
   loadingProgress = signal<number>(0);
@@ -62,11 +62,11 @@ export class AnalyzerService {
       await tf.ready();
       this.loadingProgress.set(30);
 
-      // Load USE model locally (binary shards) + vocab from Google Storage
-      // The vocab.json (218 KB) is fetched from GCS which has permissive CORS headers,
-      // avoiding the Vite dev-server fs.allow restriction on .json files.
+      // Build model URL relative to document.baseURI so it works under any base-href
+      // (e.g. /resume_analyser/ on GitHub Pages, / in local dev)
+      const baseUrl = document.baseURI.endsWith('/') ? document.baseURI : `${document.baseURI}/`;
       this.model = await use.load({
-        modelUrl: '/models/use-lite/model.json',
+        modelUrl: `${baseUrl}models/use-lite/model.json`,
         vocabUrl: 'https://storage.googleapis.com/tfjs-models/savedmodel/universal_sentence_encoder/vocab.json'
       });
       
