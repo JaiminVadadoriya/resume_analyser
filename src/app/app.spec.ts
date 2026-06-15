@@ -51,6 +51,7 @@ import { App } from './app';
 import { ResumeParserService } from './services/resume-parser.service';
 import { AnalyzerService } from './services/analyzer.service';
 import { HistoryService } from './services/history.service';
+import { LatexGeneratorService } from './services/latex-generator.service';
 
 // Initialize the Angular testing environment (only once)
 try {
@@ -64,13 +65,22 @@ try {
 }
 
 // Mocks for services to prevent TensorFlow.js model load and PDF worker loading in test context
-class MockResumeParserService {}
+class MockResumeParserService {
+  parseContactInfo() {
+    return { name: 'Jaimin Vadadoriya', email: 'test@example.com', phone: '1234567890', linkedin: '', github: '' };
+  }
+}
 class MockHistoryService {
   historyRecords = signal([]);
 }
 class MockAnalyzerService {
   modelStatus = signal('loaded');
   loadingProgress = signal(100);
+}
+class MockLatexGeneratorService {
+  generateLatex() {
+    return '% Mock LaTeX resume code';
+  }
 }
 
 describe('App', () => {
@@ -80,7 +90,8 @@ describe('App', () => {
       providers: [
         { provide: ResumeParserService, useClass: MockResumeParserService },
         { provide: AnalyzerService, useClass: MockAnalyzerService },
-        { provide: HistoryService, useClass: MockHistoryService }
+        { provide: HistoryService, useClass: MockHistoryService },
+        { provide: LatexGeneratorService, useClass: MockLatexGeneratorService }
       ]
     }).compileComponents();
   });

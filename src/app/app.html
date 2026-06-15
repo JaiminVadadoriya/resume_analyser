@@ -1,6 +1,6 @@
 <div class="app-container">
   <!-- Top Navigation & Header -->
-  <header class="app-header">
+  <header class="app-header no-print">
     <div class="header-logo">
       <mat-icon class="logo-icon text-cyan">psychology</mat-icon>
       <h1>RESUME<span>.ANALYSER</span></h1>
@@ -39,7 +39,7 @@
 
   <!-- TF.js Model Loading Progress Bar -->
   @if (tfStatus() === 'loading') {
-    <mat-progress-bar mode="determinate" [value]="tfProgress()" class="model-progress-bar"></mat-progress-bar>
+    <mat-progress-bar mode="determinate" [value]="tfProgress()" class="model-progress-bar no-print"></mat-progress-bar>
   }
 
   <!-- Main Content Dashboard -->
@@ -47,7 +47,7 @@
     
     <!-- Error Alert Banner -->
     @if (errorMsg()) {
-      <div class="alert-banner error-banner">
+      <div class="alert-banner error-banner no-print">
         <mat-icon>error_outline</mat-icon>
         <span class="alert-text">{{ errorMsg() }}</span>
         <button mat-icon-button (click)="errorMsg.set('')" class="close-alert">
@@ -60,13 +60,13 @@
     <mat-tab-group [selectedIndex]="activeTabIndex()" (selectedIndexChange)="activeTabIndex.set($event)" class="main-tabs">
       
       <!-- TAB 1: NEW ANALYSIS -->
-      <mat-tab>
+      <mat-tab class="no-print">
         <ng-template mat-tab-label>
           <mat-icon class="tab-icon">upload_file</mat-icon>
           <span>New Analysis</span>
         </ng-template>
 
-        <div class="grid-layout">
+        <div class="grid-layout no-print">
           <!-- Left: Resume Upload Card -->
           <div class="glass-card upload-section">
             <h2 class="section-title"><span class="number-badge">1</span> Upload Resume</h2>
@@ -109,6 +109,19 @@
                 </div>
               }
             </div>
+
+            <!-- Contact Details Extraction Panel (If parsed) -->
+            @if (contactInfo()) {
+              <div class="contact-details-extracted glass-card-nested">
+                <h4><mat-icon>contact_page</mat-icon> Extracted Details</h4>
+                <div class="contact-grid">
+                  <div class="contact-item"><strong>Name:</strong> {{ contactInfo()?.name }}</div>
+                  <div class="contact-item"><strong>Email:</strong> {{ contactInfo()?.email || 'N/A' }}</div>
+                  <div class="contact-item"><strong>Phone:</strong> {{ contactInfo()?.phone || 'N/A' }}</div>
+                  <div class="contact-item"><strong>GitHub:</strong> {{ contactInfo()?.github ? 'Linked' : 'N/A' }}</div>
+                </div>
+              </div>
+            }
           </div>
 
           <!-- Right: Job Description input Card -->
@@ -129,7 +142,7 @@
         </div>
 
         <!-- Action Button Panel -->
-        <div class="action-footer">
+        <div class="action-footer no-print">
           <button 
             mat-flat-button 
             class="glow-button btn-large" 
@@ -139,7 +152,7 @@
             @if (isAnalyzing()) {
               <ng-container>
                 <mat-spinner diameter="20" class="btn-spinner"></mat-spinner>
-                <span>Analyzing Semantic Match...</span>
+                <span>Analyzing Compatibility...</span>
               </ng-container>
             } @else {
               <ng-container>
@@ -161,35 +174,89 @@
         @if (currentResult()) {
           <div class="results-container">
             
-            <!-- Overall Score Ring and Summary -->
+            <!-- Overall Score Hero Header (Print Friendly Header) -->
+            <div class="print-header">
+              <h2>RESUME COMPATIBILITY REPORT</h2>
+              <p><strong>Candidate:</strong> {{ contactInfo()?.name || 'Anonymous' }} | <strong>Resume:</strong> {{ resumeName() }}</p>
+              <p><strong>Date Analyzed:</strong> {{ currentResult()?.analyzedAt }}</p>
+            </div>
+
+            <!-- Score Dashboards -->
             <div class="glass-card score-hero">
-              <div class="score-ring-container">
-                <div class="score-ring" [style.--score-deg]="(currentResult()?.matchScore || 0) * 3.6 + 'deg'">
-                  <div class="score-ring-inner">
-                    <span class="score-number">{{ currentResult()?.matchScore }}%</span>
-                    <span class="score-label">MATCH SCORE</span>
+              <div class="score-dash-grid">
+                
+                <!-- Main ATS Compatibility Score -->
+                <div class="score-ring-wrapper">
+                  <div class="score-ring" [style.--score-deg]="(currentResult()?.atsScore || 0) * 3.6 + 'deg'">
+                    <div class="score-ring-inner">
+                      <span class="score-number">{{ currentResult()?.atsScore }}%</span>
+                      <span class="score-label">ATS COMPATIBILITY</span>
+                    </div>
                   </div>
                 </div>
+
+                <!-- Sub Score Metrics Grid -->
+                <div class="score-details-grid">
+                  <div class="sub-score-card">
+                    <span class="sub-score-title">Semantic Context Match</span>
+                    <span class="sub-score-value text-cyan">{{ currentResult()?.matchScore }}%</span>
+                    <div class="sub-score-bar"><div class="sub-score-fill bg-cyan" [style.width]="currentResult()?.matchScore + '%'"></div></div>
+                  </div>
+
+                  <div class="sub-score-card">
+                    <span class="sub-score-title">Required Skill Coverage</span>
+                    <span class="sub-score-value text-emerald">{{ currentResult()?.keywordMatchRate }}%</span>
+                    <div class="sub-score-bar"><div class="sub-score-fill bg-emerald" [style.width]="currentResult()?.keywordMatchRate + '%'"></div></div>
+                  </div>
+
+                  <div class="sub-score-card">
+                    <span class="sub-score-title">Keyword Density</span>
+                    <span class="sub-score-value text-purple">{{ currentResult()?.keywordDensity | number:'1.1-1' }}%</span>
+                    <div class="sub-score-bar"><div class="sub-score-fill bg-purple" [style.width]="(currentResult()?.keywordDensity || 0) * 25 + '%'"></div></div>
+                  </div>
+                </div>
+
               </div>
-              <div class="score-meta">
-                <h2 class="score-title">Semantic Match Analysis</h2>
-                <p class="score-date">Analyzed at: {{ currentResult()?.analyzedAt }}</p>
-                <div class="score-indicator-bar">
-                  <div class="indicator-track">
-                    <div class="indicator-fill" [style.width]="currentResult()?.matchScore + '%'"></div>
-                  </div>
-                </div>
+
+              <!-- Verdict Sentence -->
+              <div class="verdict-container">
                 <p class="score-verdict">
-                  @if ((currentResult()?.matchScore || 0) >= 85) {
-                    Your resume is an <strong class="text-cyan">Outstanding Fit</strong> for this role!
-                  } @else if ((currentResult()?.matchScore || 0) >= 70) {
-                    Your resume is a <strong class="text-cyan">Strong Match</strong> with minimal adjustments needed.
-                  } @else if ((currentResult()?.matchScore || 0) >= 50) {
-                    Your resume has <strong class="text-purple">Moderate Alignment</strong>. Tailoring recommended.
+                  @if ((currentResult()?.atsScore || 0) >= 80) {
+                    Your resume is an <strong class="text-cyan">Outstanding Fit ({{ currentResult()?.atsScore }}%)</strong>. Ready for strict ATS filters!
+                  } @else if ((currentResult()?.atsScore || 0) >= 60) {
+                    Your resume is a <strong class="text-emerald">Strong Match ({{ currentResult()?.atsScore }}%)</strong> with moderate improvements needed.
+                  } @else if ((currentResult()?.atsScore || 0) >= 40) {
+                    Your resume has <strong class="text-purple">Moderate Alignment ({{ currentResult()?.atsScore }}%)</strong>. Adding critical keywords is recommended.
                   } @else {
-                    Your resume has <strong class="text-red">Low Alignment</strong>. Significant changes are suggested.
+                    Your resume has <strong class="text-red">Low ATS Compatibility ({{ currentResult()?.atsScore }}%)</strong>. Tailoring is highly suggested.
                   }
                 </p>
+              </div>
+            </div>
+
+            <!-- Score Explainability Breakdown -->
+            <div class="glass-card breakdown-card">
+              <h3 class="card-subtitle"><mat-icon class="text-cyan">bar_chart</mat-icon> Compatibility Score Breakdown</h3>
+              <p class="card-meta">Here is how the factors contributed to your overall ATS Score:</p>
+              
+              <div class="breakdown-list">
+                @for (item of currentResult()?.breakdown; track item.factor) {
+                  <div class="breakdown-item">
+                    <div class="breakdown-info">
+                      <span class="breakdown-factor">{{ item.factor }}</span>
+                      <span class="breakdown-contribution" [class.negative]="item.contribution < 0" [class.positive]="item.contribution >= 0">
+                        {{ item.contribution >= 0 ? '+' : '' }}{{ item.contribution }}%
+                      </span>
+                    </div>
+                    <p class="breakdown-desc">{{ item.description }}</p>
+                    <div class="breakdown-bar-container">
+                      <div class="breakdown-bar" 
+                           [class.negative-bar]="item.contribution < 0"
+                           [style.width]="(item.contribution >= 0 ? item.contribution : -item.contribution * 3) + '%'">
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
             </div>
 
@@ -243,6 +310,44 @@
               </ul>
             </div>
 
+            <!-- Export Actions Panel -->
+            <div class="glass-card export-actions-card no-print">
+              <h3 class="card-subtitle"><mat-icon class="text-cyan">ios_share</mat-icon> Export & Share Report</h3>
+              <p class="card-meta">Save your results, download raw data details, or print a formatted document.</p>
+              <div class="export-button-group">
+                <button mat-stroked-button (click)="downloadJsonReport()">
+                  <mat-icon>download</mat-icon> Export JSON
+                </button>
+                <button mat-stroked-button (click)="copyReportSummary()">
+                  <mat-icon>content_copy</mat-icon> Copy Summary
+                </button>
+                <button mat-flat-button color="accent" class="glow-button" (click)="printReport()">
+                  <mat-icon>print</mat-icon> Print / Save PDF
+                </button>
+              </div>
+            </div>
+
+            <!-- Tailored LaTeX Resume Template -->
+            <div class="glass-card latex-card no-print">
+              <div class="card-header-with-actions">
+                <div>
+                  <h3 class="card-subtitle"><mat-icon class="text-cyan">code</mat-icon> Tailored LaTeX Resume Template</h3>
+                  <p class="card-meta">This is a highly ATS-optimized LaTeX resume structure. It pre-populates your contact details, adds matched skills, and flags missing gaps in LaTeX comments to help you update your resume.</p>
+                </div>
+                <div class="latex-actions">
+                  <button mat-flat-button class="latex-btn" (click)="copyLatexToClipboard()">
+                    <mat-icon>content_copy</mat-icon> Copy Code
+                  </button>
+                  <button mat-flat-button color="primary" class="latex-btn" (click)="downloadLatexFile()">
+                    <mat-icon>download</mat-icon> Download .tex
+                  </button>
+                </div>
+              </div>
+              <div class="latex-editor-container">
+                <textarea readonly class="latex-textarea" [value]="latexCode()" aria-label="Generated LaTeX Resume Code"></textarea>
+              </div>
+            </div>
+
           </div>
         } @else {
           <!-- Empty State -->
@@ -258,13 +363,13 @@
       </mat-tab>
 
       <!-- TAB 3: HISTORY LOGS -->
-      <mat-tab>
+      <mat-tab class="no-print">
         <ng-template mat-tab-label>
           <mat-icon class="tab-icon">history</mat-icon>
           <span>Saved History</span>
         </ng-template>
 
-        <div class="history-container">
+        <div class="history-container no-print">
           <div class="history-header">
             <h2>Previous Analysed Matches</h2>
             @if (history().length > 0) {
@@ -289,8 +394,8 @@
                   </div>
                   
                   <div class="history-item-right">
-                    <div class="history-score" [class.high]="item.result.matchScore >= 75" [class.mid]="item.result.matchScore >= 50 && item.result.matchScore < 75" [class.low]="item.result.matchScore < 50">
-                      {{ item.result.matchScore }}%
+                    <div class="history-score" [class.high]="item.result.atsScore >= 75" [class.mid]="item.result.atsScore >= 50 && item.result.atsScore < 75" [class.low]="item.result.atsScore < 50">
+                      {{ item.result.atsScore }}%
                     </div>
                     <button mat-icon-button color="warn" (click)="deleteHistory(item.id, $event)" matTooltip="Delete Log">
                       <mat-icon>delete_outline</mat-icon>
@@ -314,7 +419,7 @@
 
   </main>
 
-  <footer class="app-footer">
+  <footer class="app-footer no-print">
     <p>Powered by TensorFlow.js • Built with Angular & Angular Material</p>
   </footer>
 </div>
