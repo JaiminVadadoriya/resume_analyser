@@ -62,6 +62,15 @@ describe('ResumeParserService', () => {
     // Check if the name of the candidate is found in the parsed text
     expect(text).toContain('Jaimin');
     
+    // Test the parseContactInfo extraction logic
+    const contact = service.parseContactInfo(text);
+    expect(contact).toBeTruthy();
+    expect(contact.name).toBe('Jaimin Vadadoriya');
+    expect(contact.email).toBe('vadadoriyajaimin@gmail.com');
+    expect(contact.phone).toBe('+91-63537-28521');
+    expect(contact.github).toContain('github.com/jaiminvadadoriya');
+    expect(contact.linkedin).toContain('linkedin.com/in/jaiminvadadoriya');
+    
     console.log('--- Extracted Text Preview ---');
     console.log(text.substring(0, 300));
   });

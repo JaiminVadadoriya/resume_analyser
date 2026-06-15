@@ -9,9 +9,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { ResumeParserService } from './services/resume-parser.service';
+import { ResumeParserService, ContactInfo } from './services/resume-parser.service';
 import { AnalyzerService, AnalysisResult } from './services/analyzer.service';
 import { HistoryService, HistoryRecord } from './services/history.service';
+import { LatexGeneratorService } from './services/latex-generator.service';
 
 @Component({
   selector: 'app-root',
@@ -35,6 +36,7 @@ export class App {
   private parserService = inject(ResumeParserService);
   private analyzerService = inject(AnalyzerService);
   private historyService = inject(HistoryService);
+  private latexService = inject(LatexGeneratorService);
 
   // Expose signals from services
   protected readonly tfStatus = this.analyzerService.modelStatus;
@@ -51,11 +53,34 @@ export class App {
   protected readonly errorMsg = signal<string>('');
   
   protected readonly currentResult = signal<AnalysisResult | null>(null);
+  protected readonly contactInfo = signal<ContactInfo | null>(null);
+  protected readonly latexCode = signal<string>('');
+  protected readonly selectedTemplate = signal<string>('technical');
+  protected readonly currentTheme = signal<string>('dark');
 
   private resumeText = '';
 
+  constructor() {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const savedTheme = localStorage.getItem('resume_analyser_theme') || 'dark';
+      this.setTheme(savedTheme);
+    }
+  }
+
+  protected setTheme(theme: string): void {
+    this.currentTheme.set(theme);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('resume_analyser_theme', theme);
+    }
+    if (typeof document !== 'undefined') {
+      const body = document.body;
+      body.classList.remove('theme-dark', 'theme-light', 'theme-warm');
+      body.classList.add(`theme-${theme}`);
+    }
+  }
+
   /**
-   * Triggers TF.js model loading manually if needed (already warms up on init)
+   * Triggers TF.js model loading manually
    */
   protected triggerLoadModel(): void {
     this.analyzerService.loadModel();
@@ -96,11 +121,15 @@ export class App {
 
     try {
       this.resumeText = await this.parserService.extractText(file);
+      // Extract contact info details from parsed text
+      const contact = this.parserService.parseContactInfo(this.resumeText);
+      this.contactInfo.set(contact);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error parsing resume';
       this.errorMsg.set(msg);
       this.resumeName.set('');
       this.resumeText = '';
+      this.contactInfo.set(null);
     } finally {
       this.isParsing.set(false);
     }
@@ -126,6 +155,11 @@ export class App {
       const result = await this.analyzerService.analyze(this.resumeText, this.jdText());
       this.currentResult.set(result);
       
+      // Auto-generate LaTeX resume code template
+      const contact = this.contactInfo() || { name: 'Your Name', email: 'your.email@example.com', phone: '+1-555-555-5555', linkedin: '', github: '' };
+      const latex = this.latexService.generateLatex(this.selectedTemplate(), contact, result.matchedSkills, result.missingSkills);
+      this.latexCode.set(latex);
+
       // Save run to local history
       this.historyService.saveRecord(this.resumeName(), this.jdText(), result);
       
@@ -140,12 +174,35 @@ export class App {
   }
 
   /**
+   * Triggered when the user changes the LaTeX resume style selection dropdown
+   */
+  protected onTemplateChanged(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const template = target?.value || 'technical';
+    this.selectedTemplate.set(template);
+
+    // Regenerate LaTeX template dynamically with the newly selected format style
+    const result = this.currentResult();
+    if (result) {
+      const contact = this.contactInfo() || { name: 'Your Name', email: 'your.email@example.com', phone: '+1-555-555-5555', linkedin: '', github: '' };
+      const latex = this.latexService.generateLatex(template, contact, result.matchedSkills, result.missingSkills);
+      this.latexCode.set(latex);
+    }
+  }
+
+  /**
    * Reloads a past run from history
    */
   protected viewHistoryRecord(record: HistoryRecord): void {
     this.currentResult.set(record.result);
     this.resumeName.set(record.resumeName);
     this.jdText.set(record.jdTitle); // set snippet preview in form field
+    
+    // Regenerate LaTeX template for selected history record using selected template style
+    const contact = this.contactInfo() || { name: 'Your Name', email: 'your.email@example.com', phone: '+1-555-555-5555', linkedin: '', github: '' };
+    const latex = this.latexService.generateLatex(this.selectedTemplate(), contact, record.result.matchedSkills, record.result.missingSkills);
+    this.latexCode.set(latex);
+
     this.activeTabIndex.set(1); // navigate to Results
   }
 
@@ -164,5 +221,104 @@ export class App {
     if (confirm('Are you sure you want to clear your local search history?')) {
       this.historyService.clearHistory();
     }
+  }
+
+  /**
+   * Copy generated LaTeX code to system clipboard
+   */
+  protected copyLatexToClipboard(): void {
+    if (!this.latexCode()) return;
+    navigator.clipboard.writeText(this.latexCode()).then(() => {
+      alert('LaTeX resume code template copied to clipboard!');
+    });
+  }
+
+  /**
+   * Download generated LaTeX template as a .tex file
+   */
+  protected downloadLatexFile(): void {
+    if (!this.latexCode()) return;
+    const blob = new Blob([this.latexCode()], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const baseName = this.resumeName() ? this.resumeName().replace(/\.[^/.]+$/, "") : 'resume';
+    a.href = url;
+    a.download = `${baseName}_tailored_${this.selectedTemplate()}.tex`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Export the analysis data as a downloadable JSON file
+   */
+  protected downloadJsonReport(): void {
+    const result = this.currentResult();
+    if (!result) return;
+    const report = {
+      resumeName: this.resumeName(),
+      contactInfo: this.contactInfo(),
+      metrics: {
+        atsScore: result.atsScore,
+        semanticMatchScore: result.matchScore,
+        keywordMatchRate: result.keywordMatchRate,
+        keywordDensity: result.keywordDensity
+      },
+      skills: {
+        matched: result.matchedSkills,
+        missing: result.missingSkills
+      },
+      breakdown: result.breakdown,
+      weakSignals: result.weakSignals,
+      recommendations: result.recommendations,
+      analyzedAt: result.analyzedAt
+    };
+
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ats_report_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Copies a text summary snapshot to clipboard
+   */
+  protected copyReportSummary(): void {
+    const result = this.currentResult();
+    if (!result) return;
+    const summary = `--- Resume ATS Analysis Snapshot ---
+Date: ${result.analyzedAt}
+Resume: ${this.resumeName()}
+ATS compatibility Score: ${result.atsScore}%
+Semantic Similarity Match: ${result.matchScore}%
+Skill Competency Coverage: ${result.keywordMatchRate}%
+Impact Score: ${result.keywordDensity}%
+
+Matched Competencies: ${result.matchedSkills.join(', ') || 'None'}
+Missing Competencies: ${result.missingSkills.join(', ') || 'None'}
+
+Weak Signals:
+${result.weakSignals.map(s => `- ${s}`).join('\n') || 'None'}
+
+Recommendations:
+${result.recommendations.map(r => `- ${r.replace(/\*\*/g, '')}`).join('\n')}
+------------------------------------`;
+
+    navigator.clipboard.writeText(summary).then(() => {
+      alert('Analysis snapshot copied to clipboard!');
+    });
+  }
+
+  /**
+   * Opens browser print panel (formatted via print stylesheet)
+   */
+  protected printReport(): void {
+    window.print();
   }
 }
